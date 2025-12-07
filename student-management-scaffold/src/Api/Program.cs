@@ -5,33 +5,51 @@ using Microsoft.EntityFrameworkCore;
 using SMS.Infrastructure.Persistence;
 using Microsoft.Extensions.Configuration;
 using Microsoft.AspNetCore.Http.Features;
-using System.IO;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
+using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add configuration
 builder.Configuration.AddJsonFile("appsettings.json", optional: true, reloadOnChange: true)
                      .AddJsonFile($"appsettings.{builder.Environment.EnvironmentName}.json", optional: true);
 
-// Services
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
-// EF Core
-var connectionString = builder.Configuration.GetConnectionString("DefaultConnection") 
+var connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
                        ?? "Server=localhost,1433;Database=SchoolDB;User Id=sa;Password=Your_strong_Password1;";
 builder.Services.AddDbContext<SchoolDbContext>(options =>
     options.UseSqlServer(connectionString));
 
-// File upload limits
 builder.Services.Configure<FormOptions>(o =>
 {
-    o.MultipartBodyLengthLimit = 10 * 1024 * 1024; // 10 MB
+    o.MultipartBodyLengthLimit = 20 * 1024 * 1024; // 20 MB
 });
 
-// File storage service
+// File storage and other services
 builder.Services.AddSingleton<IFileStorageService, FileSystemStorageService>();
+
+// JWT Auth (simple placeholder)
+var jwtKey = builder.Configuration["Jwt:Key"] ?? "VerySecretDevelopmentKey12345";
+var key = Encoding.ASCII.GetBytes(jwtKey);
+builder.Services.AddAuthentication(options =>
+{
+    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+}).AddJwtBearer(options =>
+{
+    options.RequireHttpsMetadata = false;
+    options.SaveToken = true;
+    options.TokenValidationParameters = new TokenValidationParameters
+    {
+        ValidateIssuerSigningKey = true,
+        IssuerSigningKey = new SymmetricSecurityKey(key),
+        ValidateIssuer = false,
+        ValidateAudience = false
+    };
+});
 
 var app = builder.Build();
 
@@ -42,9 +60,8 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseRouting();
-app.UseStaticFiles();
-
+app.UseAuthentication();
 app.UseAuthorization();
+app.UseStaticFiles();
 app.MapControllers();
-
 app.Run();
