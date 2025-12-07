@@ -1,0 +1,29 @@
+<div class="admission-form">
+  <h2>Student Admission</h2>
+  <form [formGroup]="form" (ngSubmit)="submit()">
+    <label>Admission No</label>
+    <input formControlName="admissionNo" />
+    <label>First Name</label>
+    <input formControlName="firstName" />
+    <label>Last Name</label>
+    <input formControlName="lastName" />
+    <label>Date of Birth</label>
+    <input type="date" formControlName="dateOfBirth" />
+    <label>Class</label>
+    <select formControlName="classId" (change)="onClassChange()">
+      <option [value]="null">Select</option>
+      <option *ngFor="let c of classes" [value]="c.id">{{c.name}}</option>
+    </select>
+    <label>Section</label>
+    <select formControlName="sectionId">
+      <option [value]="null">Select</option>
+      <option *ngFor="let s of sections" [value]="s.id">{{s.name}}</option>
+    </select>
+    <label>Guardian Name</label>
+    <input formControlName="guardianName" />
+    <label>Upload Document (PDF, PNG, JPG)</label>
+    <input type="file" (change)="onFileSelected($event)" />
+    <button type="submit">Admit</button>
+  </form>
+  <div class="message">{{message}}</div>
+</div>
